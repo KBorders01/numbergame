@@ -1,0 +1,160 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.container {
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 0.5rem;
+  color: #e94560;
+}
+
+.input-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 1.5rem 0 1rem;
+}
+
+input[type="number"],
+input[type="text"] {
+  padding: 0.6rem 1rem;
+  font-size: 1.1rem;
+  border: 2px solid #333;
+  border-radius: 6px;
+  background: #16213e;
+  color: #eee;
+  width: 200px;
+}
+
+button {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #e94560;
+  color: #fff;
+  font-weight: 600;
+}
+
+button:hover {
+  background: #c73650;
+}
+
+#feedback {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0.75rem 0 0.25rem;
+  min-height: 1.6em;
+}
+
+#guess-count {
+  color: #aaa;
+  margin-bottom: 1rem;
+}
+
+ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+ul li {
+  background: #16213e;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+li.high { color: #ff6b6b; }
+li.low  { color: #48dbfb; }
+li.correct { color: #0be881; font-weight: 700; }
+
+.hidden {
+  display: none;
+}
+
+#name-entry {
+  margin-top: 1.5rem;
+}
+
+#high-scores {
+  margin-top: 2rem;
+}
+
+#high-scores h2 {
+  color: #e94560;
+  margin-bottom: 0.25rem;
+}
+
+#high-scores .subtitle {
+  color: #aaa;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+#score-list {
+  list-style: none;
+  text-align: left;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+#score-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+#score-list li:nth-child(odd) {
+  background: #16213e;
+}
+
+#score-list li .rank {
+  color: #e94560;
+  font-weight: 700;
+  margin-right: 0.5rem;
+}
+
+#score-list li .name {
+  flex: 1;
+}
+
+#score-list li .score {
+  color: #aaa;
+}
+
+#score-list li.current {
+  background: #0f3460;
+  font-weight: 700;
+}
+
+.new-game {
+  margin-top: 1.5rem;
+  background: #0f3460;
+}
+
+.new-game:hover {
+  background: #16417e;
+}
