@@ -14,10 +14,19 @@ body {
   padding: 2rem;
 }
 
+.page-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  max-width: 1400px;
+  width: 100%;
+}
+
 .container {
   max-width: 480px;
-  width: 100%;
+  min-width: 380px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 h1 {
@@ -148,6 +157,77 @@ li.correct { color: #0be881; font-weight: 700; }
 #score-list li.current {
   background: #0f3460;
   font-weight: 700;
+}
+
+#number-grid-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+#number-grid-wrapper h2 {
+  color: #e94560;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+#number-grid {
+  display: grid;
+  grid-template-columns: repeat(50, 1fr);
+  gap: 1px;
+  font-size: 0.55rem;
+  line-height: 1;
+}
+
+.grid-cell {
+  position: relative;
+  text-align: center;
+  padding: 3px 1px;
+  border-radius: 2px;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.2s, color 0.2s;
+}
+
+.grid-cell.possible {
+  background: #0be881;
+  color: #1a1a2e;
+  font-weight: 700;
+}
+
+.grid-cell.eliminated {
+  background: transparent;
+  color: #555;
+}
+
+.grid-cell.eliminated::after {
+  content: "\00d7";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.85rem;
+  color: #ff6b6b55;
+  pointer-events: none;
+}
+
+.grid-cell.exact {
+  background: #f9ca24;
+  color: #1a1a2e;
+  font-weight: 900;
+}
+
+#fireworks {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 999;
+  display: none;
+}
+
+#fireworks.active {
+  display: block;
 }
 
 .new-game {

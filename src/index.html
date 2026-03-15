@@ -7,13 +7,14 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <div class="page-layout">
   <div class="container">
     <h1>Number Guessing Game</h1>
-    <p>I'm thinking of a number between 1 and 1,000,000.</p>
+    <p>I'm thinking of a number between 1 and 1,000.</p>
 
     <div id="game">
       <div class="input-row">
-        <input type="number" id="guess" min="1" max="1000000" placeholder="Enter your guess" autofocus>
+        <input type="number" id="guess" min="1" max="1000" placeholder="Enter your guess" autofocus>
         <button id="submit">Guess</button>
       </div>
       <p id="feedback"></p>
@@ -37,6 +38,13 @@
 
     <button id="new-game" class="new-game">New Game</button>
   </div>
+
+  <div id="number-grid-wrapper">
+    <h2>Number Map</h2>
+    <div id="number-grid"></div>
+  </div>
+  </div>
+  <canvas id="fireworks"></canvas>
   <script type="module" src="./game.js"></script>
 </body>
 </html>
