@@ -13,9 +13,12 @@ const highScoresDiv = document.getElementById("high-scores");
 const scoreList = document.getElementById("score-list");
 
 const numberGrid = document.getElementById("number-grid");
+const bombBtn = document.getElementById("bomb-btn");
+const powerBtns = document.querySelectorAll(".power-btn");
 
 const STORAGE_KEY = "numbergame-highscores";
 const MAX_SCORES = 10;
+const COLS = 40;
 
 let secretNumber;
 let guesses;
@@ -23,6 +26,9 @@ let gameOver;
 let low; // current known lower bound (exclusive)
 let high; // current known upper bound (exclusive)
 let gridCells = [];
+let bombMode = false;
+let bombedNumbers = new Set();
+let powerEliminated = new Set();
 
 function buildGrid() {
   numberGrid.innerHTML = "";
@@ -43,10 +49,178 @@ function updateGrid(exactNum) {
       gridCells[i].className = "grid-cell exact";
     } else if (num <= low || num >= high) {
       gridCells[i].className = "grid-cell eliminated";
+    } else if (bombedNumbers.has(num) || powerEliminated.has(num)) {
+      gridCells[i].className = "grid-cell bombed";
     } else {
       gridCells[i].className = "grid-cell possible";
     }
   }
+}
+
+function isPrime(n) {
+  if (n < 2) return false;
+  if (n < 4) return true;
+  if (n % 2 === 0 || n % 3 === 0) return false;
+  for (let i = 5; i * i <= n; i += 6) {
+    if (n % i === 0 || n % (i + 2) === 0) return false;
+  }
+  return true;
+}
+
+function usePower(power) {
+  if (gameOver) return;
+
+  guesses++;
+  guessCount.textContent = `Guesses: ${guesses}`;
+  playClick();
+
+  let secretMatches;
+  let label;
+
+  if (power === "prime") {
+    secretMatches = isPrime(secretNumber);
+    label = secretMatches ? "The number IS prime." : "The number is NOT prime.";
+    for (let n = 1; n <= 1000; n++) {
+      if (n <= low || n >= high || bombedNumbers.has(n)) continue;
+      const nIsPrime = isPrime(n);
+      if (secretMatches ? !nIsPrime : nIsPrime) {
+        powerEliminated.add(n);
+      }
+    }
+  } else {
+    const divisor = parseInt(power.replace("div", ""), 10);
+    secretMatches = secretNumber % divisor === 0;
+    label = secretMatches
+      ? `The number IS divisible by ${divisor}.`
+      : `The number is NOT divisible by ${divisor}.`;
+    for (let n = 1; n <= 1000; n++) {
+      if (n <= low || n >= high || bombedNumbers.has(n)) continue;
+      const nDivisible = n % divisor === 0;
+      if (secretMatches ? !nDivisible : nDivisible) {
+        powerEliminated.add(n);
+      }
+    }
+  }
+
+  feedback.textContent = label;
+  speak(label);
+  updateGrid();
+
+  const li = document.createElement("li");
+  li.textContent = label;
+  history.appendChild(li);
+}
+
+function toggleBombMode() {
+  if (gameOver) return;
+  bombMode = !bombMode;
+  bombBtn.classList.toggle("active", bombMode);
+  numberGrid.classList.toggle("bomb-mode", bombMode);
+  if (bombMode) {
+    feedback.textContent = "Bomb armed! Click a cell on the Number Map.";
+  } else {
+    feedback.textContent = "";
+  }
+}
+
+function playBombSound() {
+  // Low rumbling explosion
+  const bufferSize = audioCtx.sampleRate * 0.6;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+  }
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  source.start();
+}
+
+function handleBombClick(e) {
+  if (!bombMode || gameOver) return;
+  const cell = e.target.closest(".grid-cell");
+  if (!cell) return;
+
+  const idx = gridCells.indexOf(cell);
+  if (idx === -1) return;
+
+  const centerNum = idx + 1;
+  // Don't allow bombing already-eliminated cells
+  if (centerNum <= low || centerNum >= high || bombedNumbers.has(centerNum)) return;
+
+  const row = Math.floor(idx / COLS);
+  const col = idx % COLS;
+
+  // Collect 11x11 square area: 5 in each direction
+  const targetIndices = new Set();
+  for (let dr = -5; dr <= 5; dr++) {
+    for (let dc = -5; dc <= 5; dc++) {
+      const r = row + dr;
+      const c = col + dc;
+      if (r >= 0 && r < 25 && c >= 0 && c < COLS) {
+        targetIndices.add(r * COLS + c);
+      }
+    }
+  }
+
+  // Use a guess
+  guesses++;
+  guessCount.textContent = `Guesses: ${guesses}`;
+
+  // Check if any target is the secret number
+  let foundIt = false;
+  for (const ti of targetIndices) {
+    const num = ti + 1;
+    if (num === secretNumber) {
+      foundIt = true;
+      break;
+    }
+  }
+
+  playBombSound();
+
+  // Mark all bombed numbers (except the winner)
+  for (const ti of targetIndices) {
+    const num = ti + 1;
+    if (num > low && num < high && num !== secretNumber) {
+      bombedNumbers.add(num);
+    }
+  }
+
+  if (foundIt) {
+    feedback.textContent = `You got it! The number was ${secretNumber.toLocaleString()}.`;
+    gameOver = true;
+    guessInput.disabled = true;
+    submitBtn.disabled = true;
+    updateGrid(secretNumber);
+    speak("Congratulations, you win!");
+    startFireworks();
+    showNameEntry();
+  } else {
+    updateGrid();
+    feedback.textContent = `Bomb dropped! ${targetIndices.size} cells checked, not there.`;
+  }
+
+  // Exit bomb mode
+  bombMode = false;
+  bombBtn.classList.remove("active");
+  numberGrid.classList.remove("bomb-mode");
+
+  const li = document.createElement("li");
+  li.textContent = `Bomb @${centerNum}`;
+  li.className = foundIt ? "correct" : "high";
+  history.appendChild(li);
+
+  if (!gameOver) guessInput.focus();
 }
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -334,8 +508,15 @@ function startGame() {
   secretNumber = Math.floor(Math.random() * 1000) + 1;
   guesses = 0;
   gameOver = false;
-  low = 0;   // exclusive: numbers <= low are eliminated
-  high = 1001; // exclusive: numbers >= high are eliminated
+  low = 0;
+  high = 1001;
+  bombMode = false;
+  bombedNumbers = new Set();
+  powerEliminated = new Set();
+  bombBtn.classList.remove("active");
+  bombBtn.disabled = false;
+  numberGrid.classList.remove("bomb-mode");
+  powerBtns.forEach((btn) => { btn.disabled = false; });
   buildGrid();
   feedback.textContent = "";
   guessCount.textContent = "";
@@ -382,6 +563,7 @@ function makeGuess() {
     gameOver = true;
     guessInput.disabled = true;
     submitBtn.disabled = true;
+    bombBtn.disabled = true;
     updateGrid(num);
     speak("Congratulations, you win!");
     startFireworks();
@@ -402,6 +584,14 @@ saveScoreBtn.addEventListener("click", () => { playClick(); handleSaveScore(); }
 playerNameInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") { playClick(); handleSaveScore(); }
 });
+bombBtn.addEventListener("click", () => { playClick(); toggleBombMode(); });
+powerBtns.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    btn.disabled = true;
+    usePower(btn.dataset.power);
+  });
+});
+numberGrid.addEventListener("click", handleBombClick);
 newGameBtn.addEventListener("click", startGame);
 
 startGame();

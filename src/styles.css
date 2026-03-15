@@ -41,6 +41,29 @@ h1 {
   margin: 1.5rem 0 1rem;
 }
 
+.power-row {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.power-btn {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  background: #0f3460;
+}
+
+.power-btn:hover:not(:disabled) {
+  background: #16417e;
+}
+
+.power-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 input[type="number"],
 input[type="text"] {
   padding: 0.6rem 1rem;
@@ -172,7 +195,7 @@ li.correct { color: #0be881; font-weight: 700; }
 
 #number-grid {
   display: grid;
-  grid-template-columns: repeat(50, 1fr);
+  grid-template-columns: repeat(40, 1fr);
   gap: 1px;
   font-size: 0.55rem;
   line-height: 1;
@@ -207,6 +230,46 @@ li.correct { color: #0be881; font-weight: 700; }
   font-size: 0.85rem;
   color: #ff6b6b55;
   pointer-events: none;
+}
+
+.grid-cell.bombed {
+  background: transparent;
+  color: #555;
+}
+
+.grid-cell.bombed::after {
+  content: "\00d7";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.85rem;
+  color: #ff6b6b55;
+  pointer-events: none;
+}
+
+#bomb-btn {
+  background: #f9ca24;
+  color: #1a1a2e;
+}
+
+#bomb-btn:hover {
+  background: #d4a817;
+}
+
+#bomb-btn.active {
+  background: #ff6b6b;
+  color: #fff;
+  animation: pulse 0.8s infinite alternate;
+}
+
+@keyframes pulse {
+  from { box-shadow: 0 0 4px #ff6b6b; }
+  to   { box-shadow: 0 0 12px #ff6b6b; }
+}
+
+#number-grid.bomb-mode .grid-cell.possible {
+  cursor: crosshair;
 }
 
 .grid-cell.exact {
