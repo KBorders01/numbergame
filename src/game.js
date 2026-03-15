@@ -103,7 +103,7 @@ function usePower(power) {
   }
 
   feedback.textContent = label;
-  speak(label);
+  speak(label.replace(/\bIS\b/g, "is").replace(/\bNOT\b/g, "not"));
   updateGrid();
 
   const li = document.createElement("li");
