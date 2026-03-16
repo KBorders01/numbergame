@@ -12,8 +12,11 @@ const saveScoreBtn = document.getElementById("save-score");
 const highScoresDiv = document.getElementById("high-scores");
 const scoreList = document.getElementById("score-list");
 
+const hintEl = document.getElementById("hint");
+const hardModeToggle = document.getElementById("hard-mode");
 const numberGrid = document.getElementById("number-grid");
 const bombBtn = document.getElementById("bomb-btn");
+const powerGuessBtn = document.getElementById("power-guess-btn");
 const powerBtns = document.querySelectorAll(".power-btn");
 
 const STORAGE_KEY = "numbergame-highscores";
@@ -27,6 +30,9 @@ let low; // current known lower bound (exclusive)
 let high; // current known upper bound (exclusive)
 let gridCells = [];
 let bombMode = false;
+let bombUsed = false;
+let powerGuessMode = false;
+let powerGuessUsed = false;
 let bombedNumbers = new Set();
 let powerEliminated = new Set();
 
@@ -112,7 +118,7 @@ function usePower(power) {
 }
 
 function toggleBombMode() {
-  if (gameOver) return;
+  if (gameOver || bombUsed) return;
   bombMode = !bombMode;
   bombBtn.classList.toggle("active", bombMode);
   numberGrid.classList.toggle("bomb-mode", bombMode);
@@ -202,7 +208,7 @@ function handleBombClick(e) {
     guessInput.disabled = true;
     submitBtn.disabled = true;
     updateGrid(secretNumber);
-    speak("Congratulations, you win!");
+    speak(`${guesses} ${guesses === 1 ? "guess" : "guesses"}. Congratulations, you win!`);
     startFireworks();
     showNameEntry();
   } else {
@@ -210,9 +216,11 @@ function handleBombClick(e) {
     feedback.textContent = `Bomb dropped! ${targetIndices.size} cells checked, not there.`;
   }
 
-  // Exit bomb mode
+  // Exit bomb mode and disable bomb for the rest of the round
   bombMode = false;
+  bombUsed = true;
   bombBtn.classList.remove("active");
+  bombBtn.disabled = true;
   numberGrid.classList.remove("bomb-mode");
 
   const li = document.createElement("li");
@@ -220,6 +228,81 @@ function handleBombClick(e) {
   li.className = foundIt ? "correct" : "high";
   history.appendChild(li);
 
+  if (!gameOver) guessInput.focus();
+}
+
+function togglePowerGuessMode() {
+  if (gameOver || powerGuessUsed) return;
+  powerGuessMode = !powerGuessMode;
+  powerGuessBtn.classList.toggle("active", powerGuessMode);
+  if (powerGuessMode) {
+    feedback.textContent = "Power Guess armed! Enter a number to check ±20 range.";
+  } else {
+    feedback.textContent = "";
+  }
+}
+
+function makePowerGuess() {
+  if (gameOver) return;
+
+  const value = guessInput.value.trim();
+  if (!value) return;
+
+  const num = parseInt(value, 10);
+  if (isNaN(num) || num < 1 || num > 1000) {
+    feedback.textContent = "Please enter a number between 1 and 1,000.";
+    return;
+  }
+
+  guesses++;
+  guessCount.textContent = `Guesses: ${guesses}`;
+
+  const rangeLow = Math.max(1, num - 20);
+  const rangeHigh = Math.min(1000, num + 20);
+
+  const foundIt = secretNumber >= rangeLow && secretNumber <= rangeHigh;
+
+  playBombSound();
+
+  // Eliminate all numbers in the range that aren't the secret
+  for (let n = rangeLow; n <= rangeHigh; n++) {
+    if (n !== secretNumber) {
+      bombedNumbers.add(n);
+    }
+  }
+
+  if (foundIt) {
+    // Also narrow bounds: we know it's in the range
+    if (rangeLow - 1 > low) low = rangeLow - 1;
+    if (rangeHigh + 1 < high) high = rangeHigh + 1;
+
+    feedback.textContent = `Power Guess hit! The number was ${secretNumber.toLocaleString()}.`;
+    gameOver = true;
+    guessInput.disabled = true;
+    submitBtn.disabled = true;
+    bombBtn.disabled = true;
+    updateGrid(secretNumber);
+    speak(`${guesses} ${guesses === 1 ? "guess" : "guesses"}. Congratulations, you win!`);
+    startFireworks();
+    showNameEntry();
+  } else {
+    feedback.textContent = `Power Guess missed! Not in ${rangeLow}–${rangeHigh}.`;
+    updateGrid();
+    speak(`Power Guess missed! Not between ${rangeLow} and ${rangeHigh}`);
+  }
+
+  // Disable power guess for the rest of the round
+  powerGuessMode = false;
+  powerGuessUsed = true;
+  powerGuessBtn.classList.remove("active");
+  powerGuessBtn.disabled = true;
+
+  const li = document.createElement("li");
+  li.textContent = `Power ±20 @${num}`;
+  li.className = foundIt ? "correct" : "high";
+  history.appendChild(li);
+
+  guessInput.value = "";
   if (!gameOver) guessInput.focus();
 }
 
@@ -503,18 +586,41 @@ function handleSaveScore() {
   renderHighScores(idx);
 }
 
+function generateHint(num) {
+  if (hardModeToggle.checked) {
+    const log2 = Math.log2(num);
+    const rounded = Math.round(log2 * 100) / 100;
+    hintEl.textContent = `Hint: The log base 2 of the number is ${rounded}`;
+  } else {
+    const small = Math.floor(Math.random() * 8) + 3; // 3–10
+    if (num > 500) {
+      const other = num - small;
+      hintEl.textContent = `Hint: The number equals ${other} + ${small}`;
+    } else {
+      const other = num + small;
+      hintEl.textContent = `Hint: The number equals ${other} - ${small}`;
+    }
+  }
+}
+
 function startGame() {
   stopFireworks();
   secretNumber = Math.floor(Math.random() * 1000) + 1;
+  generateHint(secretNumber);
   guesses = 0;
   gameOver = false;
   low = 0;
   high = 1001;
   bombMode = false;
+  bombUsed = false;
+  powerGuessMode = false;
+  powerGuessUsed = false;
   bombedNumbers = new Set();
   powerEliminated = new Set();
   bombBtn.classList.remove("active");
   bombBtn.disabled = false;
+  powerGuessBtn.classList.remove("active");
+  powerGuessBtn.disabled = false;
   numberGrid.classList.remove("bomb-mode");
   powerBtns.forEach((btn) => { btn.disabled = false; });
   buildGrid();
@@ -565,7 +671,7 @@ function makeGuess() {
     submitBtn.disabled = true;
     bombBtn.disabled = true;
     updateGrid(num);
-    speak("Congratulations, you win!");
+    speak(`${guesses} ${guesses === 1 ? "guess" : "guesses"}. Congratulations, you win!`);
     startFireworks();
     showNameEntry();
   }
@@ -576,15 +682,16 @@ function makeGuess() {
   if (!gameOver) guessInput.focus();
 }
 
-submitBtn.addEventListener("click", () => { playClick(); makeGuess(); });
+submitBtn.addEventListener("click", () => { playClick(); if (powerGuessMode) makePowerGuess(); else makeGuess(); });
 guessInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") { playClick(); makeGuess(); }
+  if (e.key === "Enter") { playClick(); if (powerGuessMode) makePowerGuess(); else makeGuess(); }
 });
 saveScoreBtn.addEventListener("click", () => { playClick(); handleSaveScore(); });
 playerNameInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") { playClick(); handleSaveScore(); }
 });
 bombBtn.addEventListener("click", () => { playClick(); toggleBombMode(); });
+powerGuessBtn.addEventListener("click", () => { playClick(); togglePowerGuessMode(); });
 powerBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
     btn.disabled = true;
@@ -592,6 +699,7 @@ powerBtns.forEach((btn) => {
   });
 });
 numberGrid.addEventListener("click", handleBombClick);
+hardModeToggle.addEventListener("change", startGame);
 newGameBtn.addEventListener("click", startGame);
 
 startGame();

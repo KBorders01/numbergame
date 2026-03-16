@@ -11,12 +11,17 @@
   <div class="container">
     <h1>Number Guessing Game</h1>
     <p>I'm thinking of a number between 1 and 1,000.</p>
+    <div class="mode-toggle">
+      <label><input type="checkbox" id="hard-mode"> Hard Mode</label>
+    </div>
+    <p id="hint" class="hint"></p>
 
     <div id="game">
       <div class="input-row">
         <input type="number" id="guess" min="1" max="1000" placeholder="Enter your guess" autofocus>
         <button id="submit">Guess</button>
         <button id="bomb-btn" title="Click, then pick a cell on the grid">Bomb</button>
+        <button id="power-guess-btn" title="Guess a number ±20 range">Power Guess</button>
       </div>
       <div class="power-row">
         <button class="power-btn" data-power="prime">Is it prime?</button>

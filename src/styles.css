@@ -34,6 +34,29 @@ h1 {
   color: #e94560;
 }
 
+.mode-toggle {
+  margin: 0.5rem 0 0;
+}
+
+.mode-toggle label {
+  color: #aaa;
+  font-size: 0.95rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.mode-toggle input {
+  margin-right: 0.4rem;
+  cursor: pointer;
+}
+
+.hint {
+  color: #f9ca24;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.5rem 0 0;
+}
+
 .input-row {
   display: flex;
   gap: 0.5rem;
@@ -255,6 +278,31 @@ li.correct { color: #0be881; font-weight: 700; }
 
 #bomb-btn:hover {
   background: #d4a817;
+}
+
+#power-guess-btn {
+  background: #a29bfe;
+  color: #1a1a2e;
+}
+
+#power-guess-btn:hover {
+  background: #8c82fc;
+}
+
+#power-guess-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#power-guess-btn.active {
+  background: #6c5ce7;
+  color: #fff;
+  animation: pulse-pg 0.8s infinite alternate;
+}
+
+@keyframes pulse-pg {
+  from { box-shadow: 0 0 4px #a29bfe; }
+  to   { box-shadow: 0 0 12px #a29bfe; }
 }
 
 #bomb-btn.active {
